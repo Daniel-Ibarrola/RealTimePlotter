@@ -47,15 +47,17 @@ socket.addEventListener("open", (event) => {
 const Plot = () => {
     console.log("Plot Renders")
 
-    const [data, setData] = React.useState([1, ]);
-    const [index, setIndex] = React.useState(0);
+    const [plotData, setPlotData] = React.useState({
+        data: [],
+        index: 0,
+    })
 
     const dataset = {
         labels,
         datasets: [
             {
                 label: 'Dataset 1',
-                data: data,
+                data: plotData.data,
                 borderColor: 'rgb(255, 99, 132)',
                 backgroundColor: 'rgba(255, 99, 132, 0.5)',
             },
@@ -63,17 +65,24 @@ const Plot = () => {
     }
 
     const addNewPoint = (value) => {
-        if (data.length < 10){
-            setData([...data, value]);
+        console.log(plotData);
+        if (plotData.data.length < 10){
+            setPlotData({
+                data: [...plotData.data, value],
+                index: plotData.index + 1,
+            });
         }
         else {
-            let copy = [...data];
-            copy[index] = value;
-            setData(copy);
-        }
-        setIndex(index + 1);
-        if (index === 9){
-            setIndex(0);
+            let currentIndex = plotData.index;
+            if (plotData.index >= 9){
+                currentIndex = 0;
+            }
+            let copy = [...plotData.data];
+            copy[plotData.index] = value;
+            setPlotData({
+                data: copy,
+                index: currentIndex + 1,
+            });
         }
     };
 
