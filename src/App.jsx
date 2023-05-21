@@ -9,6 +9,7 @@ import {
     Tooltip,
     Legend,
 } from 'chart.js';
+import useWebSocket, { ReadyState } from "react-use-websocket";
 import { Line } from 'react-chartjs-2';
 
 
@@ -38,19 +39,29 @@ const options = {
 };
 
 
-const socket = new WebSocket("ws://localhost:8765");
-
-socket.addEventListener("open", (event) => {
-    console.log("Connection successful!");
-});
-
-const Plot = () => {
+const Plotter = () => {
     console.log("Plot Renders")
 
     const [plotData, setPlotData] = React.useState({
         data: [],
         index: 0,
-    })
+    });
+
+    const { readyState } = useWebSocket("ws://localhost:8765", {
+        onOpen: () => console.log("Socket opened"),
+        onClose: () => console.log("Connection closed"),
+        // shouldReconnect: (event) => true,
+        onMessage: (event) => addNewPoint(event.data),
+    });
+
+    const connectionStatus = {
+        [ReadyState.CONNECTING]: 'Connecting',
+        [ReadyState.OPEN]: 'Open',
+        [ReadyState.CLOSING]: 'Closing',
+        [ReadyState.CLOSED]: 'Closed',
+        [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
+    }[readyState];
+    console.log(`Connection status ${connectionStatus}`);
 
     const dataset = {
         labels,
@@ -62,10 +73,9 @@ const Plot = () => {
                 backgroundColor: 'rgba(255, 99, 132, 0.5)',
             },
         ],
-    }
+    };
 
     const addNewPoint = (value) => {
-        console.log(plotData);
         if (plotData.data.length < 10){
             setPlotData({
                 data: [...plotData.data, value],
@@ -86,11 +96,6 @@ const Plot = () => {
         }
     };
 
-    socket.addEventListener("message", (event) => {
-        const value = parseInt(event.data);
-        addNewPoint(value);
-    });
-
     return (
         <>
             <Line data={dataset} options={options} />
@@ -101,13 +106,15 @@ const Plot = () => {
 
 const App = () => {
     console.log("App Renders");
+    // socket.addEventListener("message", (event) => {
+    //             const value = parseInt(event.data);
+    //             addNewPoint(value);
+    //         });
+
     return (
         <>
           <h1>Hello World</h1>
-            <Plot />
-            {/*<button onClick={addNewPoint}>*/}
-            {/*    Add Point*/}
-            {/*</button>*/}
+            <Plotter />
         </>
   )
 }
