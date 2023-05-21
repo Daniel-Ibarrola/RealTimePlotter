@@ -11,6 +11,9 @@ import {
 } from 'chart.js';
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import { Line } from 'react-chartjs-2';
+import Container from "react-bootstrap/Container";
+import Col from "react-bootstrap/Col";
+import Row from "react-bootstrap/Row";
 
 
 ChartJS.register(
@@ -39,7 +42,7 @@ const options = {
 };
 
 
-const LinePlot = ({ socket }) => {
+const LinePlot = ({ socket, name, colors }) => {
     // console.log("LinePlot renders");
     const [plotData, setPlotData] = React.useState({
         data: [],
@@ -60,10 +63,10 @@ const LinePlot = ({ socket }) => {
         labels,
         datasets: [
             {
-                label: 'Dataset 1',
+                label: name,
                 data: plotData.data,
-                borderColor: 'rgb(255, 99, 132)',
-                backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                borderColor: colors.borderColor,
+                backgroundColor: colors.backgroundColor,
             },
         ],
     };
@@ -114,12 +117,23 @@ const Plotter = () => {
     console.log(`Connection status ${connectionStatus}`);
 
     return (
-        <>
+        <Container>
             {
                 connectionStatus === "Open" &&
-                <LinePlot socket={getWebSocket()}/>
+                <Row>
+                    <Col>
+                        <LinePlot
+                            socket={getWebSocket()}
+                            name={"Chart 1"}
+                            colors={{
+                                "backgroundColor": 'rgba(203, 67, 53, 0.5)',
+                                "borderColor": 'rgba(203, 67, 53, 0.5)',
+                            }}
+                        />
+                    </Col>
+                </Row>
             }
-        </>
+        </Container>
     )
 
 };
@@ -128,7 +142,7 @@ const App = () => {
     console.log("App Renders");
     return (
         <>
-          <h1>Real Time Plotter</h1>
+            <h1>Real Time Plotter</h1>
             <Plotter />
         </>
   )
