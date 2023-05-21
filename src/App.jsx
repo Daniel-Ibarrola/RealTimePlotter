@@ -26,8 +26,6 @@ ChartJS.register(
     Legend
 );
 
-const labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
-
 const options = {
     responsive: true,
     plugins: {
@@ -40,6 +38,8 @@ const options = {
         },
     },
 };
+
+const labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
 
 
 const LineCharts = ({ socket }) => {
@@ -133,21 +133,14 @@ const LineCharts = ({ socket }) => {
 
     return (
         <>
-            <Row>
-                <Col>
-                    <Line data={chartsDataSets[0]} options={options} />
-                </Col>
-            </Row>
-            <Row>
-                <Col>
-                    <Line data={chartsDataSets[1]} options={options} />
-                </Col>
-            </Row>
-            <Row>
-                <Col>
-                    <Line data={chartsDataSets[2]} options={options} />
-                </Col>
-            </Row>
+            {chartsDataSets.map((dataSet, index) =>
+                <Row key={index}>
+                    <Col key={index}>
+                        <Line key={index} data={dataSet} options={options} />
+                    </Col>
+                </Row>
+                )
+            }
         </>
     )
 };
