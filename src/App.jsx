@@ -39,29 +39,22 @@ const options = {
 };
 
 
-const Plotter = () => {
-    console.log("Plot Renders")
-
+const LinePlot = ({ socket }) => {
+    // console.log("LinePlot renders");
     const [plotData, setPlotData] = React.useState({
         data: [],
         index: 0,
     });
 
-    const { readyState } = useWebSocket("ws://localhost:8765", {
-        onOpen: () => console.log("Socket opened"),
-        onClose: () => console.log("Connection closed"),
-        // shouldReconnect: (event) => true,
-        onMessage: (event) => addNewPoint(event.data),
-    });
-
-    const connectionStatus = {
-        [ReadyState.CONNECTING]: 'Connecting',
-        [ReadyState.OPEN]: 'Open',
-        [ReadyState.CLOSING]: 'Closing',
-        [ReadyState.CLOSED]: 'Closed',
-        [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
-    }[readyState];
-    console.log(`Connection status ${connectionStatus}`);
+    React.useEffect(() => {
+        // console.log("Adding listener");
+        const messageListener = (event) => {
+            const value = parseInt(event.data);
+            addNewPoint(value);
+        }
+        socket.addEventListener("message", messageListener);
+        return () => socket.removeEventListener("message", messageListener);
+    }, []);
 
     const dataset = {
         labels,
@@ -76,29 +69,56 @@ const Plotter = () => {
     };
 
     const addNewPoint = (value) => {
-        if (plotData.data.length < 10){
-            setPlotData({
-                data: [...plotData.data, value],
-                index: plotData.index + 1,
-            });
-        }
-        else {
-            let currentIndex = plotData.index;
-            if (plotData.index >= 9){
+        setPlotData(prevPlotData => {
+            if (prevPlotData.data.length < 10){
+                return {
+                    data: [...prevPlotData.data, value],
+                    index: prevPlotData.index + 1,
+                };
+            }
+            let currentIndex = prevPlotData.index;
+            if (currentIndex >= 9){
                 currentIndex = 0;
             }
-            let copy = [...plotData.data];
-            copy[plotData.index] = value;
-            setPlotData({
+            let copy = [...prevPlotData.data];
+            copy[currentIndex] = value;
+            return {
                 data: copy,
                 index: currentIndex + 1,
-            });
-        }
+            };
+        });
     };
 
     return (
+        <Line data={dataset} options={options} />
+    )
+};
+
+const Plotter = () => {
+    console.log("Plotter Renders")
+    const { readyState, getWebSocket } = useWebSocket("ws://localhost:8765", {
+        onOpen: () => console.log("Socket opened"),
+        onClose: () => console.log("Connection closed"),
+        filter: (message) => false,  // prevent re-rendering after each message
+        // shouldReconnect: (event) => true,
+        // onMessage: (event) => addNewPoint(event.data),
+    });
+
+    const connectionStatus = {
+        [ReadyState.CONNECTING]: 'Connecting',
+        [ReadyState.OPEN]: 'Open',
+        [ReadyState.CLOSING]: 'Closing',
+        [ReadyState.CLOSED]: 'Closed',
+        [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
+    }[readyState];
+    console.log(`Connection status ${connectionStatus}`);
+
+    return (
         <>
-            <Line data={dataset} options={options} />
+            {
+                connectionStatus === "Open" &&
+                <LinePlot socket={getWebSocket()}/>
+            }
         </>
     )
 
@@ -106,14 +126,9 @@ const Plotter = () => {
 
 const App = () => {
     console.log("App Renders");
-    // socket.addEventListener("message", (event) => {
-    //             const value = parseInt(event.data);
-    //             addNewPoint(value);
-    //         });
-
     return (
         <>
-          <h1>Hello World</h1>
+          <h1>Real Time Plotter</h1>
             <Plotter />
         </>
   )
