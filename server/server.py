@@ -18,8 +18,9 @@ async def send_data():
     count = 1
     while True:
         if count >= 100:
-            count = 2
-        websockets.broadcast(CONNECTIONS, str(count))
+            count = 1
+        msg = f"{count},{count},{count}"
+        websockets.broadcast(CONNECTIONS, msg)
         count += 1
         await asyncio.sleep(5)
 

@@ -42,58 +42,113 @@ const options = {
 };
 
 
-const LinePlot = ({ socket, name, colors }) => {
-    // console.log("LinePlot renders");
+const LineCharts = ({ socket }) => {
     const [plotData, setPlotData] = React.useState({
-        data: [],
+        data: {
+            first: [],
+            second: [],
+            third: [],
+        },
         index: 0,
     });
 
     React.useEffect(() => {
-        // console.log("Adding listener");
         const messageListener = (event) => {
-            const value = parseInt(event.data);
-            addNewPoint(value);
+            addNewPoint(event.data);
         }
         socket.addEventListener("message", messageListener);
         return () => socket.removeEventListener("message", messageListener);
     }, []);
 
-    const dataset = {
-        labels,
-        datasets: [
-            {
-                label: name,
-                data: plotData.data,
-                borderColor: colors.borderColor,
-                backgroundColor: colors.backgroundColor,
-            },
-        ],
-    };
+    const chartsDataSets = [
+        {
+            labels,
+            datasets: [
+                {
+                    label: "Chart 1",
+                    data: plotData.data.first,
+                    borderColor: 'rgb(203, 67, 53)',
+                    backgroundColor: 'rgba(203, 67, 53, 0.5)',
+                },
+            ],
+        },
+        {
+            labels,
+            datasets: [
+                {
+                    label: "Chart 2",
+                    data: plotData.data.second,
+                    borderColor: 'rgb(36, 113, 163)',
+                    backgroundColor: 'rgba(36, 113, 163, 0.5)',
+                },
+            ],
+        },
+        {
+            labels,
+            datasets: [
+                {
+                    label: "Chart 3",
+                    data: plotData.data.third,
+                    borderColor: 'rgb(40, 180, 99)',
+                    backgroundColor: 'rgba(40, 180, 99, 0.2)',
+                },
+            ],
+        },
+    ];
 
     const addNewPoint = (value) => {
+        // Add a point to each of the charts
+        const points = value.split(",");
+
         setPlotData(prevPlotData => {
             if (prevPlotData.data.length < 10){
                 return {
-                    data: [...prevPlotData.data, value],
+                    data: {
+                        first: [...prevPlotData.data.first, parseInt(points[0])],
+                        second: [...prevPlotData.data.second, parseInt(points[1])],
+                        third: [...prevPlotData.data.third, parseInt(points[2])],
+                    },
                     index: prevPlotData.index + 1,
                 };
+            } else {
+                let currentIndex = prevPlotData.index;
+                if (currentIndex >= 9){
+                    currentIndex = 0;
+                }
+                let copy = {
+                    first: [...prevPlotData.data.first],
+                    second: [...prevPlotData.data.second],
+                    third: [...prevPlotData.data.third],
+                };
+                copy.first[currentIndex] = points[0];
+                copy.second[currentIndex] = points[1];
+                copy.third[currentIndex] = points[2];
+                return {
+                    data: copy,
+                    index: currentIndex + 1,
+                };
             }
-            let currentIndex = prevPlotData.index;
-            if (currentIndex >= 9){
-                currentIndex = 0;
-            }
-            let copy = [...prevPlotData.data];
-            copy[currentIndex] = value;
-            return {
-                data: copy,
-                index: currentIndex + 1,
-            };
         });
     };
 
     return (
-        <Line data={dataset} options={options} />
+        <>
+            <Row>
+                <Col>
+                    <Line data={chartsDataSets[0]} options={options} />
+                </Col>
+            </Row>
+            <Row>
+                <Col>
+                    <Line data={chartsDataSets[1]} options={options} />
+                </Col>
+            </Row>
+            <Row>
+                <Col>
+                    <Line data={chartsDataSets[2]} options={options} />
+                </Col>
+            </Row>
+        </>
     )
 };
 
@@ -104,7 +159,6 @@ const Plotter = () => {
         onClose: () => console.log("Connection closed"),
         filter: (message) => false,  // prevent re-rendering after each message
         // shouldReconnect: (event) => true,
-        // onMessage: (event) => addNewPoint(event.data),
     });
 
     const connectionStatus = {
@@ -120,18 +174,7 @@ const Plotter = () => {
         <Container>
             {
                 connectionStatus === "Open" &&
-                <Row>
-                    <Col>
-                        <LinePlot
-                            socket={getWebSocket()}
-                            name={"Chart 1"}
-                            colors={{
-                                "backgroundColor": 'rgba(203, 67, 53, 0.5)',
-                                "borderColor": 'rgba(203, 67, 53, 0.5)',
-                            }}
-                        />
-                    </Col>
-                </Row>
+                <LineCharts socket={getWebSocket()}/>
             }
         </Container>
     )
